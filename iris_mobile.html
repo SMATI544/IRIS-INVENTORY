@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>IRIS · Inventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Kufi+Arabic:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #05080f;
+  --s1:     #0a0f1a;
+  --s2:     #0f1623;
+  --brd:    #1a2236;
+  --brd2:   #243050;
+  --acc:    #ff4d0d;
+  --acc2:   #ff7a45;
+  --blue:   #3b82f6;
+  --cyan:   #22d3ee;
+  --green:  #34d399;
+  --yellow: #fbbf24;
+  --red:    #f87171;
+  --txt:    #dde4f0;
+  --txt2:   #6b7fa0;
+  --mono:   'JetBrains Mono', monospace;
+  --ar:     'Noto Kufi Arabic', sans-serif;
+  --en:     'Syne', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html { font-size: 15px; }
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--ar);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* GRID BG */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255,77,13,.08), transparent),
+    linear-gradient(rgba(59,130,246,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,.03) 1px, transparent 1px);
+  background-size: auto, 36px 36px, 36px 36px;
+}
+
+.app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+
+/* ── LOGIN SCREEN ── */
+#loginScreen {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 32px 24px;
+}
+
+.login-logo {
+  text-align: center; margin-bottom: 48px;
+}
+.login-logo .mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 72px; height: 72px; border-radius: 20px;
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  font-family: var(--en); font-weight: 800; font-size: 24px; color: #fff;
+  box-shadow: 0 0 40px rgba(255,77,13,.35);
+  margin-bottom: 16px;
+}
+.login-logo h1 {
+  font-family: var(--en); font-size: 26px; font-weight: 800;
+  letter-spacing: -1px; color: var(--txt);
+}
+.login-logo h1 span { color: var(--acc); }
+.login-logo p { font-size: 13px; color: var(--txt2); margin-top: 5px; }
+
+.login-card {
+  background: var(--s1);
+  border: 1px solid var(--brd);
+  border-radius: 20px;
+  padding: 28px 24px;
+}
+
+.input-group { margin-bottom: 16px; }
+.input-group label {
+  display: block; font-size: 11px; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--txt2); margin-bottom: 8px;
+}
+.input-group input {
+  width: 100%; background: var(--bg);
+  border: 1px solid var(--brd); border-radius: 12px;
+  padding: 13px 16px; color: var(--txt);
+  font-family: var(--mono); font-size: 14px;
+  outline: none; transition: border-color .2s;
+  -webkit-appearance: none;
+}
+.input-group input:focus { border-color: var(--blue); }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+.login-btn {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  border: none; border-radius: 12px;
+  color: #fff; font-family: var(--ar);
+  font-size: 16px; font-weight: 700;
+  cursor: pointer; margin-top: 8px;
+  box-shadow: 0 4px 20px rgba(255,77,13,.3);
+  transition: all .2s; display: flex;
+  align-items: center; justify-content: center; gap: 8px;
+}
+.login-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(255,77,13,.4); }
+.login-btn:active { transform: translateY(0); }
+.login-btn:disabled { background: var(--brd2); box-shadow: none; cursor: not-allowed; }
+
+.err-msg {
+  background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3);
+  border-radius: 10px; padding: 12px 14px;
+  font-size: 13px; color: var(--red);
+  margin-top: 14px; display: none; text-align: center;
+}
+
+/* ── MAIN APP ── */
+#mainApp { display: none; }
+
+/* TOP BAR */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--brd);
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(5,8,15,.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.topbar-logo {
+  font-family: var(--en); font-weight: 800; font-size: 18px;
+  letter-spacing: -0.5px;
+}
+.topbar-logo span { color: var(--acc); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.user-chip {
+  background: var(--s2); border: 1px solid var(--brd);
+  border-radius: 20px; padding: 5px 12px;
+  font-size: 12px; color: var(--txt2);
+  display: flex; align-items: center; gap: 6px;
+}
+.logout-btn {
+  background: none; border: 1px solid var(--brd);
+  border-radius: 8px; padding: 6px 10px;
+  color: var(--txt2); font-size: 11px; cursor: pointer;
+  transition: all .2s;
+}
+.logout-btn:hover { border-color: var(--acc); color: var(--acc); }
+
+/* REFRESH */
+.refresh-bar {
+  padding: 10px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--brd);
+}
+.last-update { font-size: 11px; color: var(--txt2); font-family: var(--mono); }
+.refresh-btn {
+  background: var(--s2); border: 1px solid var(--brd);
+  border-radius: 8px; padding: 7px 14px;
+  color: var(--cyan); font-size: 12px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: all .2s; font-family: var(--ar);
+}
+.refresh-btn:hover { border-color: var(--cyan); background: rgba(34,211,238,.08); }
+.refresh-btn.spinning .ri { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* KPI ROW — horizontal scroll */
+.kpi-scroll {
+  display: flex; gap: 10px;
+  padding: 14px 18px; overflow-x: auto;
+  scrollbar-width: none;
+}
+.kpi-scroll::-webkit-scrollbar { display: none; }
+
+.kcard {
+  flex-shrink: 0; min-width: 120px;
+  background: var(--s1); border: 1px solid var(--brd);
+  border-radius: 14px; padding: 14px;
+  position: relative; overflow: hidden;
+}
+.kcard::before {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px;
+}
+.kcard.k1::before { background: var(--blue); }
+.kcard.k2::before { background: var(--cyan); }
+.kcard.k3::before { background: var(--green); }
+.kcard.k4::before { background: var(--yellow); }
+.kcard.k5::before { background: var(--red); }
+.kcard-lbl { font-size: 10px; color: var(--txt2); margin-bottom: 8px; letter-spacing: .5px; }
+.kcard-val { font-family: var(--mono); font-size: 24px; font-weight: 600; line-height: 1; }
+.kcard.k1 .kcard-val { color: var(--blue); }
+.kcard.k2 .kcard-val { color: var(--cyan); }
+.kcard.k3 .kcard-val { color: var(--green); }
+.kcard.k4 .kcard-val { color: var(--yellow); }
+.kcard.k5 .kcard-val { color: var(--red); }
+
+/* SEARCH + FILTER */
+.search-wrap {
+  margin: 0 18px 10px;
+  background: var(--s1); border: 1px solid var(--brd);
+  border-radius: 12px; padding: 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.search-wrap input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--txt); font-family: var(--ar); font-size: 14px;
+  padding: 12px 0;
+}
+.search-wrap input::placeholder { color: var(--txt2); }
+
+.filter-scroll {
+  display: flex; gap: 8px; padding: 0 18px 12px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.filter-scroll::-webkit-scrollbar { display: none; }
+.ftag {
+  flex-shrink: 0; padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--brd); background: var(--s1);
+  color: var(--txt2); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.ftag.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+/* SORT ROW */
+.sort-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px 10px; font-size: 12px; color: var(--txt2);
+}
+.sort-btns { display: flex; gap: 6px; }
+.sbtn {
+  padding: 5px 11px; border-radius: 7px;
+  border: 1px solid var(--brd); background: none;
+  color: var(--txt2); font-size: 11px; cursor: pointer;
+  transition: all .15s;
+}
+.sbtn.on { border-color: var(--cyan); color: var(--cyan); background: rgba(34,211,238,.08); }
+
+/* CARDS LIST */
+.cards { padding: 0 18px; display: flex; flex-direction: column; gap: 10px; }
+
+.tcard {
+  background: var(--s1); border: 1px solid var(--brd);
+  border-radius: 14px; padding: 14px 16px;
+  transition: border-color .2s, transform .15s;
+  animation: fadeUp .3s ease both;
+}
+.tcard:active { transform: scale(.98); }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.tcard-top {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 10px;
+}
+.tcard-codes { }
+.tcard-code {
+  font-family: var(--mono); font-size: 13px;
+  font-weight: 600; color: var(--cyan);
+}
+.tcard-spec {
+  font-family: var(--en); font-size: 16px;
+  font-weight: 700; color: var(--txt);
+  margin-top: 2px; letter-spacing: .5px;
+}
+
+.qty-big {
+  font-family: var(--mono); font-size: 28px;
+  font-weight: 700; line-height: 1;
+  text-align: left;
+}
+.qty-big.qh { color: var(--green); }
+.qty-big.qm { color: var(--yellow); }
+.qty-big.ql { color: #fb923c; }
+.qty-big.qz { color: var(--txt2); }
+
+.tcard-bar {
+  height: 4px; background: var(--brd);
+  border-radius: 2px; overflow: hidden; margin-bottom: 10px;
+}
+.tcard-bar-fill {
+  height: 100%; border-radius: 2px;
+  transition: width .8s cubic-bezier(.4,0,.2,1);
+}
+
+.tcard-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.tcard-time {
+  font-family: var(--mono); font-size: 10px; color: var(--txt2);
+}
+.st-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: .5px;
+  padding: 3px 9px; border-radius: 20px;
+}
+.st-h { background: rgba(52,211,153,.1); color: var(--green); border: 1px solid rgba(52,211,153,.2); }
+.st-m { background: rgba(251,191,36,.1); color: var(--yellow); border: 1px solid rgba(251,191,36,.2); }
+.st-l { background: rgba(251,146,60,.1); color: #fb923c; border: 1px solid rgba(251,146,60,.2); }
+.st-z { background: rgba(248,113,113,.08); color: var(--red); border: 1px solid rgba(248,113,113,.2); }
+
+/* LOAD MORE */
+.load-more {
+  margin: 16px 18px 0;
+  width: calc(100% - 36px);
+  padding: 13px; border-radius: 12px;
+  border: 1px dashed var(--brd2);
+  background: none; color: var(--txt2);
+  font-family: var(--ar); font-size: 14px;
+  cursor: pointer; transition: all .2s;
+  display: none;
+}
+.load-more:hover { border-color: var(--blue); color: var(--blue); }
+
+/* EXPORT FAB */
+.fab-row {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 10px; z-index: 200;
+  display: none;
+}
+.fab {
+  padding: 12px 22px; border-radius: 50px;
+  border: none; font-family: var(--ar);
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; gap: 7px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+.fab.csv { background: var(--green); color: #0a1a12; }
+.fab.xls { background: var(--blue); color: #fff; }
+
+/* EMPTY / LOADING */
+.center-msg {
+  text-align: center; padding: 60px 24px;
+  color: var(--txt2);
+}
+.center-msg .ico { font-size: 44px; opacity: .3; margin-bottom: 14px; }
+.center-msg h3 { font-size: 17px; color: var(--txt); margin-bottom: 8px; }
+.center-msg p { font-size: 13px; line-height: 1.9; }
+
+.loader {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 24px; gap: 16px;
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--brd);
+  border-top-color: var(--acc);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loader p { font-size: 13px; color: var(--txt2); }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="loginScreen">
+  <div class="login-logo">
+    <div class="mark">IR</div>
+    <h1>IRIS.<span>tyres</span></h1>
+    <p>Inventory Statistics Dashboard</p>
+  </div>
+
+  <div class="login-card">
+    <div class="input-group">
+      <label>Host : Port</label>
+      <input id="lHost" type="text" value="10.112.90.26:8066" autocomplete="off" autocorrect="off" autocapitalize="off">
+    </div>
+    <div class="row2">
+      <div class="input-group" style="margin-bottom:0">
+        <label>Username</label>
+        <input id="lUser" type="text" value="I.ALA" autocomplete="username" autocapitalize="off">
+      </div>
+      <div class="input-group" style="margin-bottom:0">
+        <label>Password</label>
+        <input id="lPass" type="password" value="islam@2025" autocomplete="current-password">
+      </div>
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">
+      <span id="loginBtnTxt">🔑 تسجيل الدخول</span>
+    </button>
+    <div class="err-msg" id="errMsg"></div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="mainApp">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-logo">IRIS.<span>tyres</span></div>
+    <div class="topbar-right">
+      <div class="user-chip">👤 <span id="userLabel">—</span></div>
+      <button class="logout-btn" onclick="doLogout()">خروج</button>
+    </div>
+  </div>
+
+  <!-- REFRESH BAR -->
+  <div class="refresh-bar">
+    <div class="last-update" id="lastUpdate">—</div>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
+      <span class="ri">↻</span> تحديث
+    </button>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-scroll" id="kpiScroll">
+    <div class="kcard k1"><div class="kcard-lbl">الأصناف</div><div class="kcard-val" id="kT">—</div></div>
+    <div class="kcard k2"><div class="kcard-lbl">إجمالي القطع</div><div class="kcard-val" id="kQ">—</div></div>
+    <div class="kcard k3"><div class="kcard-lbl">وفير ≥100</div><div class="kcard-val" id="kH">—</div></div>
+    <div class="kcard k4"><div class="kcard-lbl">منخفض</div><div class="kcard-val" id="kM">—</div></div>
+    <div class="kcard k5"><div class="kcard-lbl">نفد</div><div class="kcard-val" id="kZ">—</div></div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-wrap">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--txt2);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="search" id="searchInput" placeholder="بحث: كود أو مقاس..." oninput="applyFilters()">
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filter-scroll">
+    <button class="ftag on" onclick="setFilter('all',this)">الكل</button>
+    <button class="ftag" onclick="setFilter('high',this)" style="color:var(--green)">🟢 وفير</button>
+    <button class="ftag" onclick="setFilter('med',this)"  style="color:var(--yellow)">🟡 متوسط</button>
+    <button class="ftag" onclick="setFilter('low',this)"  style="color:orange">🟠 منخفض</button>
+    <button class="ftag" onclick="setFilter('zero',this)" style="color:var(--red)">🔴 نفد</button>
+  </div>
+
+  <!-- SORT -->
+  <div class="sort-row">
+    <span id="countLbl" style="font-family:var(--mono)">— صنف</span>
+    <div class="sort-btns">
+      <button class="sbtn on" id="sQty" onclick="sortBy('qty',this)">الكمية ↓</button>
+      <button class="sbtn" id="sCode" onclick="sortBy('code',this)">الكود</button>
+      <button class="sbtn" id="sSpec" onclick="sortBy('spec',this)">المقاس</button>
+    </div>
+  </div>
+
+  <!-- CARDS -->
+  <div class="cards" id="cardsList"></div>
+  <button class="load-more" id="loadMoreBtn" onclick="loadMore()">+ تحميل المزيد</button>
+
+</div><!-- /mainApp -->
+
+</div><!-- /app -->
+
+<!-- FAB EXPORT -->
+<div class="fab-row" id="fabRow">
+  <button class="fab csv" onclick="exportCSV()">⬇ CSV</button>
+  <button class="fab xls" onclick="exportXLS()">📊 Excel</button>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────
+let BASE = '', TOKEN = '', USER = '';
+let ALL = [], FILTERED = [];
+let activeFilter = 'all';
+let sortCol = 'qty', sortAsc = false;
+let shown = 30;
+let maxQty = 1;
+
+// ── LOGIN ──────────────────────────────────────────────────────────────
+async function doLogin() {
+  const host = document.getElementById('lHost').value.trim();
+  const user = document.getElementById('lUser').value.trim();
+  const pass = document.getElementById('lPass').value.trim();
+
+  if (!host || !user || !pass) return showErr('أدخل جميع البيانات');
+
+  BASE = 'http://' + host;
+  const btn = document.getElementById('loginBtn');
+  const txt = document.getElementById('loginBtnTxt');
+  btn.disabled = true;
+  txt.textContent = '⏳ جاري التسجيل...';
+  hideErr();
+
+  try {
+    const res = await fetch(`${BASE}/hkapi/sys/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Language': 'en' },
+      body: JSON.stringify({ UserId: user, UserPassword: pass })
+    });
+    const data = await res.json();
+
+    if (data.code === 200 && data.token) {
+      TOKEN = data.token;
+      USER  = user;
+      document.getElementById('userLabel').textContent = user;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      document.getElementById('fabRow').style.display = 'flex';
+      await loadData();
+    } else {
+      showErr('فشل تسجيل الدخول — تحقق من البيانات');
+    }
+  } catch (e) {
+    showErr('لا يمكن الوصول للخادم — تحقق من الـ Host والشبكة');
+  }
+
+  btn.disabled = false;
+  txt.textContent = '🔑 تسجيل الدخول';
+}
+
+function doLogout() {
+  TOKEN = ''; USER = ''; ALL = []; FILTERED = [];
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('fabRow').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function showErr(msg) {
+  const e = document.getElementById('errMsg');
+  e.textContent = msg; e.style.display = 'block';
+}
+function hideErr() { document.getElementById('errMsg').style.display = 'none'; }
+
+// ── LOAD DATA ──────────────────────────────────────────────────────────
+async function loadData() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  btn.disabled = true;
+
+  const list = document.getElementById('cardsList');
+  list.innerHTML = `<div class="loader"><div class="spinner"></div><p>جاري جلب البيانات...</p></div>`;
+
+  try {
+    const res = await fetch(`${BASE}/hkapi/wms/queryJoinProductStats`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Token': TOKEN,
+        'Language': 'en',
+        'Accept': 'application/json, text/plain, */*',
+      },
+      body: JSON.stringify({ productNo: "", ware: "", area: "", level: "" })
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      doLogout(); return;
+    }
+
+    const json = await res.json();
+
+    // استخراج المصفوفة من أي شكل للـ response
+    let rows = [];
+    if (Array.isArray(json)) rows = json;
+    else if (Array.isArray(json.data))     rows = json.data;
+    else if (Array.isArray(json.list))     rows = json.list;
+    else if (Array.isArray(json.records))  rows = json.records;
+    else {
+      for (const k of Object.keys(json)) {
+        if (Array.isArray(json[k]) && json[k].length > 0) { rows = json[k]; break; }
+      }
+    }
+
+    ALL = rows.map((r, i) => ({
+      i:    i + 1,
+      code: r.ProductNo    || r.productNo    || '',
+      spec: r.ProductSpec  || r.productSpec  || '',
+      qty:  parseInt(r.SumCount || r.sumCount || r.quantity || 0) || 0,
+      time: r.MaxProductTime || r.maxProductTime || '',
+      grade: r.SorterLevel || r.sorterLevel || '',
+    }));
+
+    maxQty = Math.max(...ALL.map(r => r.qty), 1);
+
+    document.getElementById('lastUpdate').textContent =
+      'آخر تحديث: ' + new Date().toLocaleTimeString('ar-DZ', {hour12:false});
+
+    updateKPI();
+    applyFilters();
+
+  } catch (e) {
+    list.innerHTML = `<div class="center-msg"><div class="ico">⚠️</div><h3>فشل الاتصال</h3><p>${e.message}</p></div>`;
+  }
+
+  btn.classList.remove('spinning');
+  btn.disabled = false;
+}
+
+// ── KPI ────────────────────────────────────────────────────────────────
+function updateKPI() {
+  const total = ALL.length;
+  const totalQty = ALL.reduce((s,r) => s + r.qty, 0);
+  const high = ALL.filter(r => r.qty >= 100).length;
+  const med  = ALL.filter(r => r.qty > 0 && r.qty < 100).length;
+  const zero = ALL.filter(r => r.qty === 0).length;
+  document.getElementById('kT').textContent = total;
+  document.getElementById('kQ').textContent = totalQty.toLocaleString();
+  document.getElementById('kH').textContent = high;
+  document.getElementById('kM').textContent = med;
+  document.getElementById('kZ').textContent = zero;
+}
+
+// ── FILTER / SORT ──────────────────────────────────────────────────────
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.ftag').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  shown = 30;
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+  FILTERED = ALL.filter(r => {
+    const mq = !q || r.code.toLowerCase().includes(q) || r.spec.toLowerCase().includes(q);
+    const qty = r.qty;
+    const mf =
+      activeFilter === 'all'  ? true :
+      activeFilter === 'high' ? qty >= 100 :
+      activeFilter === 'med'  ? qty >= 20 && qty < 100 :
+      activeFilter === 'low'  ? qty > 0 && qty < 20 :
+      activeFilter === 'zero' ? qty === 0 : true;
+    return mq && mf;
+  });
+  doSort();
+}
+
+function sortBy(col, el) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = col !== 'qty'; }
+  document.querySelectorAll('.sbtn').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  el.textContent = (col==='qty'?'الكمية':col==='code'?'الكود':'المقاس') + (sortAsc?' ↑':' ↓');
+  doSort();
+}
+
+function doSort() {
+  FILTERED.sort((a, b) => {
+    const av = sortCol === 'qty' ? a.qty : sortCol === 'code' ? a.code : a.spec;
+    const bv = sortCol === 'qty' ? b.qty : sortCol === 'code' ? b.code : b.spec;
+    if (typeof av === 'number') return sortAsc ? av - bv : bv - av;
+    return sortAsc ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+  });
+  shown = 30;
+  renderCards();
+}
+
+// ── RENDER CARDS ───────────────────────────────────────────────────────
+function renderCards() {
+  const list = document.getElementById('cardsList');
+  const lmBtn = document.getElementById('loadMoreBtn');
+  document.getElementById('countLbl').textContent = `${FILTERED.length} صنف`;
+
+  if (FILTERED.length === 0) {
+    list.innerHTML = `<div class="center-msg"><div class="ico">🔍</div><h3>لا توجد نتائج</h3><p>جرّب تغيير كلمة البحث أو الفلتر</p></div>`;
+    lmBtn.style.display = 'none';
+    return;
+  }
+
+  const slice = FILTERED.slice(0, shown);
+  list.innerHTML = slice.map((r, idx) => cardHTML(r, idx)).join('');
+
+  lmBtn.style.display = shown < FILTERED.length ? 'block' : 'none';
+  lmBtn.textContent = `+ تحميل المزيد (${FILTERED.length - shown} متبقي)`;
+}
+
+function loadMore() {
+  shown += 30;
+  renderCards();
+}
+
+function cardHTML(r, idx) {
+  const qty = r.qty;
+  const pct = Math.round((qty / maxQty) * 100);
+  const qCls = qty === 0 ? 'qz' : qty < 20 ? 'ql' : qty < 100 ? 'qm' : 'qh';
+  const sCls = qty === 0 ? 'st-z' : qty < 20 ? 'st-l' : qty < 100 ? 'st-m' : 'st-h';
+  const sLbl = qty === 0 ? '⛔ نفد' : qty < 20 ? '⚠ منخفض' : qty < 100 ? '● متوفر' : '✔ وفير';
+  const barClr = qty === 0 ? 'var(--brd2)' : qty < 20 ? '#fb923c' : qty < 100 ? 'var(--yellow)' : 'var(--green)';
+  const time = r.time ? r.time.slice(0, 16).replace('T', ' ') : '—';
+  const delay = Math.min(idx * 30, 300);
+
+  return `<div class="tcard" style="animation-delay:${delay}ms">
+    <div class="tcard-top">
+      <div class="tcard-codes">
+        <div class="tcard-code">${r.code || '—'}</div>
+        <div class="tcard-spec">${r.spec || '—'}</div>
+      </div>
+      <div class="qty-big ${qCls}">${qty.toLocaleString()}</div>
+    </div>
+    <div class="tcard-bar">
+      <div class="tcard-bar-fill" style="width:${pct}%;background:${barClr}"></div>
+    </div>
+    <div class="tcard-bottom">
+      <div class="tcard-time">🕐 ${time}</div>
+      <div class="st-tag ${sCls}">${sLbl}</div>
+    </div>
+  </div>`;
+}
+
+// ── EXPORT ─────────────────────────────────────────────────────────────
+function exportCSV() {
+  const rows = [['Tire Code','Tire Spec','Quantity','Status','Last Production','Grade']];
+  FILTERED.forEach(r => {
+    const s = r.qty===0?'نفد':r.qty<20?'منخفض':r.qty<100?'متوفر':'وفير';
+    rows.push([r.code, r.spec, r.qty, s, r.time, r.grade]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  dl('iris_inventory.csv', 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv));
+}
+
+function exportXLS() {
+  let h = '<table><tr><th>Tire Code</th><th>Tire Spec</th><th>Quantity</th><th>Status</th><th>Last Production</th><th>Grade</th></tr>';
+  FILTERED.forEach(r => {
+    const s = r.qty===0?'نفد':r.qty<20?'منخفض':r.qty<100?'متوفر':'وفير';
+    h += `<tr><td>${r.code}</td><td>${r.spec}</td><td>${r.qty}</td><td>${s}</td><td>${r.time}</td><td>${r.grade}</td></tr>`;
+  });
+  h += '</table>';
+  const blob = new Blob([h], {type:'application/vnd.ms-excel;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'iris_inventory.xls'; a.click();
+}
+
+function dl(name, data) {
+  const a = document.createElement('a'); a.href = data; a.download = name; a.click();
+}
+
+// Enter key on login
+document.getElementById('lPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>
